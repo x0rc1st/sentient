@@ -80,12 +80,6 @@ while [[ "$PROVISION_MORE" =~ ^[Yy]$ ]]; do
         break
     fi
 
-    read -rp "[?] Exercise ID (used for labeling and ruleset matching): " EXERCISE_ID
-    if [ -z "$EXERCISE_ID" ]; then
-        echo "[-] No exercise ID provided. Skipping provisioning."
-        break
-    fi
-
     echo "[?] Target OS type:"
     echo "    1) Windows (default)"
     echo "    2) Linux"
@@ -105,9 +99,9 @@ while [[ "$PROVISION_MORE" =~ ^[Yy]$ ]]; do
 
     echo ""
     echo "────────────────────────────────────────────────────"
-    echo " Provisioning $TARGET_IP ($OS_TYPE) — $EXERCISE_ID"
+    echo " Provisioning $TARGET_IP ($OS_TYPE)"
     echo "────────────────────────────────────────────────────"
-    bash "$SCRIPT_DIR/provision-target.sh" "$TARGET_IP" "$EXERCISE_ID" "$OS_TYPE" "$CREDS"
+    bash "$SCRIPT_DIR/provision-target.sh" "$TARGET_IP" "$OS_TYPE" "$CREDS"
 
     echo ""
     read -rp "[?] Provision another target? (y/N): " PROVISION_MORE
