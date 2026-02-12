@@ -91,9 +91,35 @@ else
         echo "[*] Adding to default_client_monitoring_artifacts:"
         for artifact in "${SELECTED[@]}"; do
             echo "    - $artifact"
-            # Insert the artifact after the default_client_monitoring_artifacts: line
-            sed -i "/^default_client_monitoring_artifacts:/a\\- $artifact" "$WORK_DIR/server.config.yaml"
         done
+
+        # Use Python to reliably insert artifacts into the YAML config
+        python3 -c "
+import sys, re
+config_path = sys.argv[1]
+artifacts = sys.argv[2:]
+with open(config_path) as f:
+    lines = f.readlines()
+for i, line in enumerate(lines):
+    if 'default_client_monitoring_artifacts:' in line:
+        # Match indentation of existing entries
+        indent = ''
+        if i+1 < len(lines):
+            m = re.match(r'^(\s*)-', lines[i+1])
+            if m:
+                indent = m.group(1)
+        # Find the end of the list
+        j = i + 1
+        while j < len(lines) and lines[j].strip().startswith('-'):
+            j += 1
+        # Insert new artifacts
+        for artifact in reversed(artifacts):
+            lines.insert(j, f'{indent}- {artifact}\n')
+        break
+with open(config_path, 'w') as f:
+    f.writelines(lines)
+" "$WORK_DIR/server.config.yaml" "${SELECTED[@]}"
+
         echo ""
         echo "[+] Server config updated."
     else
