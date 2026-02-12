@@ -42,8 +42,3 @@ echo ""
 echo "[+] Setup complete. Directory structure:"
 find "$PERSIST_DIR" -type f -exec ls -lh {} \;
 
-echo ""
-echo "[*] Next steps:"
-echo "    1. Copy bootstrap.sh to $PERSIST_DIR/"
-echo "    2. Copy provision_target.sh to $PERSIST_DIR/"
-echo "    3. Run: $PERSIST_DIR/bootstrap.sh"
