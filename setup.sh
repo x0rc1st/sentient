@@ -1,0 +1,40 @@
+#!/bin/bash
+# /tmp/setup-velociraptor.sh
+# One-time setup for Velociraptor on Pwnbox
+
+set -e
+
+PERSIST_DIR="/opt/htb-monitoring"
+VELO_VERSION="v0.75.6"
+VELO_RELEASE="https://github.com/Velocidex/velociraptor/releases/download/v0.75"
+SYSMON_URL="https://raw.githubusercontent.com/x0rc1st/sentient/main/Sysmon64.exe"
+
+echo "[*] Creating directories..."
+mkdir -p "$PERSIST_DIR/rulesets"
+
+echo "[*] Downloading Linux binary..."
+curl -L -o "$PERSIST_DIR/velociraptor" \
+  "${VELO_RELEASE}/velociraptor-${VELO_VERSION}-linux-amd64"
+
+echo "[*] Downloading Windows binary..."
+curl -L -o "$PERSIST_DIR/velociraptor.exe" \
+  "${VELO_RELEASE}/velociraptor-${VELO_VERSION}-windows-amd64.exe"
+
+echo "[*] Downloading Sysmon64.exe..."
+curl -L -o "$PERSIST_DIR/Sysmon64.exe" "$SYSMON_URL"
+
+echo "[*] Setting permissions..."
+chmod +x "$PERSIST_DIR/velociraptor"
+
+echo "[*] Verifying..."
+ls -lah "$PERSIST_DIR/"
+
+echo ""
+echo "[+] Setup complete. Directory structure:"
+find "$PERSIST_DIR" -type f -exec ls -lh {} \;
+
+echo ""
+echo "[*] Next steps:"
+echo "    1. Copy bootstrap.sh to $PERSIST_DIR/"
+echo "    2. Copy provision_target.sh to $PERSIST_DIR/"
+echo "    3. Run: $PERSIST_DIR/bootstrap.sh"
