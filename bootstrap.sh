@@ -1,0 +1,61 @@
+#!/bin/bash
+# /opt/htb-monitoring/bootstrap.sh
+# Called on every Pwnbox boot
+
+PERSIST_DIR="/opt/htb-monitoring"
+WORK_DIR="/tmp/velo"
+mkdir -p "$WORK_DIR"
+
+# 1. Detect current VPN IP
+VPN_IP=$(ip -4 addr show tun0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
+echo "[*] VPN IP: $VPN_IP"
+
+# 2. Generate fresh server + client configs with this IP
+$PERSIST_DIR/velociraptor config generate --merge '{
+  "Client": {
+    "server_urls": ["https://'"$VPN_IP"':8000/"],
+    "use_self_signed_ssl": true
+  },
+  "Frontend": {
+    "bind_address": "0.0.0.0",
+    "bind_port": 8000,
+    "hostname": "'"$VPN_IP"'"
+  },
+  "GUI": {
+    "bind_address": "0.0.0.0",
+    "bind_port": 8889
+  },
+  "Datastore": {
+    "location": "'"$WORK_DIR"'/datastore",
+    "filestore_directory": "'"$WORK_DIR"'/filestore"
+  }
+}' > "$WORK_DIR/server.config.yaml"
+
+# 3. Add admin user with known password
+$PERSIST_DIR/velociraptor --config "$WORK_DIR/server.config.yaml" \
+  user add admin admin --role administrator
+
+# 4. Extract the client config from the server config
+$PERSIST_DIR/velociraptor config client \
+  --config "$WORK_DIR/server.config.yaml" \
+  > "$WORK_DIR/client.config.yaml"
+
+# 5. Start the Velociraptor server
+$PERSIST_DIR/velociraptor frontend \
+  --config "$WORK_DIR/server.config.yaml" \
+  --definitions "$PERSIST_DIR/rulesets" \
+  -v &
+
+echo "[*] Velociraptor server running on $VPN_IP:8000"
+echo "[*] GUI available at https://$VPN_IP:8889 (admin:admin)"
+
+# 6. Serve the client binaries + config for lab VMs to pull
+mkdir -p "$WORK_DIR/assets"
+cp "$PERSIST_DIR/velociraptor"        "$WORK_DIR/assets/"
+cp "$PERSIST_DIR/velociraptor.exe"    "$WORK_DIR/assets/"
+cp "$WORK_DIR/client.config.yaml"     "$WORK_DIR/assets/"
+cd "$WORK_DIR/assets"
+python3 -m http.server 8443 --bind 0.0.0.0 &
+
+echo "[*] Asset server on http://$VPN_IP:8443"
+echo "[*] Ready to provision lab VMs"
