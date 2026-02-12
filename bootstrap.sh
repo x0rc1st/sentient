@@ -6,6 +6,8 @@ PERSIST_DIR="/opt/htb-monitoring"
 WORK_DIR="/tmp/velo"
 mkdir -p "$WORK_DIR"
 
+# ─── Phase 1: Config generation & admin setup ────────────────────────────────
+
 # 1. Detect current VPN IP
 VPN_IP=$(ip -4 addr show tun0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
 echo "[*] VPN IP: $VPN_IP"
@@ -34,6 +36,80 @@ $PERSIST_DIR/velociraptor config generate --merge '{
 # 3. Add admin user with known password
 $PERSIST_DIR/velociraptor --config "$WORK_DIR/server.config.yaml" \
   user add admin admin --role administrator
+
+echo ""
+echo "[+] Server config generated and admin user created."
+
+# ─── Phase 2: Artifact selection for client monitoring ───────────────────────
+
+echo ""
+echo "────────────────────────────────────────────────────"
+echo " Select artifacts for default client monitoring"
+echo "────────────────────────────────────────────────────"
+echo ""
+
+# Discover available rulesets
+RULESETS=()
+for f in "$PERSIST_DIR/rulesets"/*.yaml; do
+    [ -f "$f" ] || continue
+    name=$(basename "$f" .yaml)
+    RULESETS+=("$name")
+done
+
+if [ ${#RULESETS[@]} -eq 0 ]; then
+    echo "[!] No rulesets found in $PERSIST_DIR/rulesets/"
+    echo "[*] Skipping artifact selection."
+else
+    echo "[*] Available artifacts:"
+    for i in "${!RULESETS[@]}"; do
+        echo "    $((i+1))) ${RULESETS[$i]}"
+    done
+
+    echo ""
+    echo "[?] Enter the numbers of the artifacts to monitor (space or comma separated)."
+    echo "    Example: 1 3  or  1,2,3  or  'all' for everything."
+    read -rp "    Selection: " SELECTION
+
+    SELECTED=()
+    if [[ "$SELECTION" =~ ^[Aa]ll$ ]]; then
+        SELECTED=("${RULESETS[@]}")
+    else
+        # Normalize commas to spaces and iterate
+        SELECTION="${SELECTION//,/ }"
+        for num in $SELECTION; do
+            idx=$((num - 1))
+            if [ "$idx" -ge 0 ] && [ "$idx" -lt "${#RULESETS[@]}" ]; then
+                SELECTED+=("${RULESETS[$idx]}")
+            else
+                echo "[!] Invalid selection: $num (skipping)"
+            fi
+        done
+    fi
+
+    if [ ${#SELECTED[@]} -gt 0 ]; then
+        echo ""
+        echo "[*] Adding to default_client_monitoring_artifacts:"
+        for artifact in "${SELECTED[@]}"; do
+            echo "    - $artifact"
+            # Insert the artifact after the default_client_monitoring_artifacts: line
+            sed -i "/^default_client_monitoring_artifacts:/a\\- $artifact" "$WORK_DIR/server.config.yaml"
+        done
+        echo ""
+        echo "[+] Server config updated."
+    else
+        echo "[*] No artifacts selected. Continuing with defaults."
+    fi
+fi
+
+# ─── Phase 3: Start services ────────────────────────────────────────────────
+
+echo ""
+read -rp "[?] Continue to start the Velociraptor server and asset server? (Y/n): " CONTINUE
+if [[ "$CONTINUE" =~ ^[Nn]$ ]]; then
+    echo "[*] Stopped. Config is at: $WORK_DIR/server.config.yaml"
+    echo "[*] You can review/edit it and re-run this script."
+    exit 0
+fi
 
 # 4. Extract the client config from the server config
 $PERSIST_DIR/velociraptor config client \

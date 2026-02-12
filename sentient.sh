@@ -46,7 +46,8 @@ echo ""
 # ─── Step 2: Bootstrap ──────────────────────────────────────────────────────
 
 echo "[?] Start the Velociraptor server and asset server?"
-echo "    This generates fresh configs using your current VPN IP."
+echo "    This generates configs, lets you pick monitoring artifacts,"
+echo "    and starts the server using your current VPN IP."
 read -rp "    Run bootstrap? (Y/n): " RUN_BOOTSTRAP
 
 if [[ ! "$RUN_BOOTSTRAP" =~ ^[Nn]$ ]]; then
@@ -56,8 +57,7 @@ if [[ ! "$RUN_BOOTSTRAP" =~ ^[Nn]$ ]]; then
     echo "════════════════════════════════════════════════════"
     bash "$SCRIPT_DIR/bootstrap.sh"
     echo ""
-    echo "[+] Server is up. Waiting a few seconds for it to stabilize..."
-    sleep 5
+    echo "[+] Bootstrap complete."
 else
     echo "[*] Skipping bootstrap."
 fi
