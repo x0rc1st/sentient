@@ -1,0 +1,5 @@
+name: Custom.Events.ClockTest
+type: CLIENT_EVENT
+sources:
+  - query: |
+      SELECT now() AS Time FROM clock(period=5)
