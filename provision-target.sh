@@ -22,11 +22,21 @@ echo "[*] Target: $TARGET_IP ($OS_TYPE)"
 
 if [ "$OS_TYPE" = "windows" ]; then
 
-    echo "[*] Deploying to Windows via psexec..."
+    echo "[*] Deploying Sysmon to Windows via psexec..."
+    impacket-psexec "${CREDS}@${TARGET_IP}" \
+      "powershell -c \"
+        mkdir C:\\ProgramData\\svc -Force | Out-Null;
+        Invoke-WebRequest -Uri http://${VPN_IP}:8443/Sysmon64.exe -OutFile C:\\ProgramData\\svc\\Sysmon64.exe;
+        Invoke-WebRequest -Uri http://${VPN_IP}:8443/sysmonconfig-excludes-only.xml -OutFile C:\\ProgramData\\svc\\sysmonconfig.xml;
+        Start-Process -FilePath C:\\ProgramData\\svc\\Sysmon64.exe -ArgumentList '-u force' -Wait -ErrorAction SilentlyContinue;
+        Start-Process -FilePath C:\\ProgramData\\svc\\Sysmon64.exe -ArgumentList '-accepteula -i C:\\ProgramData\\svc\\sysmonconfig.xml' -Wait;
+        Get-Service Sysmon64 -ErrorAction SilentlyContinue | Select-Object Status,Name
+      \""
+
+    echo "[*] Deploying Velociraptor to Windows via psexec..."
     impacket-psexec "${CREDS}@${TARGET_IP}" \
       "powershell -c \"
         Stop-Service Velociraptor -ErrorAction SilentlyContinue;
-        mkdir C:\\ProgramData\\svc -Force | Out-Null;
         Invoke-WebRequest -Uri http://${VPN_IP}:8443/velociraptor.exe -OutFile C:\\ProgramData\\svc\\svc.exe;
         Invoke-WebRequest -Uri http://${VPN_IP}:8443/client.config.yaml -OutFile C:\\ProgramData\\svc\\c.yaml;
         Start-Process -FilePath C:\\ProgramData\\svc\\svc.exe -ArgumentList 'service install --config C:\\ProgramData\\svc\\c.yaml' -Wait;
