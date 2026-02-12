@@ -146,10 +146,11 @@ $PERSIST_DIR/velociraptor config client \
 $PERSIST_DIR/velociraptor frontend \
   --config "$WORK_DIR/server.config.yaml" \
   --definitions "$PERSIST_DIR/rulesets" \
-  -v &
+  -v > "$WORK_DIR/velociraptor.log" 2>&1 &
 
 echo "[*] Velociraptor server running on $VPN_IP:8000"
 echo "[*] GUI available at https://$VPN_IP:8889 (admin:admin)"
+echo "[*] Server log: $WORK_DIR/velociraptor.log"
 
 # 6. Serve the client binaries + config for lab VMs to pull
 mkdir -p "$WORK_DIR/assets"
@@ -157,7 +158,8 @@ cp "$PERSIST_DIR/velociraptor"        "$WORK_DIR/assets/"
 cp "$PERSIST_DIR/velociraptor.exe"    "$WORK_DIR/assets/"
 cp "$WORK_DIR/client.config.yaml"     "$WORK_DIR/assets/"
 cd "$WORK_DIR/assets"
-python3 -m http.server 8443 --bind 0.0.0.0 &
+python3 -m http.server 8443 --bind 0.0.0.0 > "$WORK_DIR/asset-server.log" 2>&1 &
 
 echo "[*] Asset server on http://$VPN_IP:8443"
+echo "[*] Asset server log: $WORK_DIR/asset-server.log"
 echo "[*] Ready to provision lab VMs"
