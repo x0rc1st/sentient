@@ -225,6 +225,21 @@ with open(config_path, 'w') as f:
 
         echo ""
         echo "[+] Server config updated with server monitoring artifacts."
+
+        # Prompt for webhook URL if any selected artifact is an alert ruleset
+        for artifact in "${SRV_SELECTED[@]}"; do
+            if [[ "$artifact" == Custom.Server.Alerts* ]]; then
+                echo ""
+                read -rp "[?] Enter webhook URL for $artifact: " WEBHOOK_URL
+                if [ -n "$WEBHOOK_URL" ]; then
+                    sed -i "s|https://your.webhook.url|$WEBHOOK_URL|g" \
+                        "$PERSIST_DIR/rulesets/$artifact.yaml"
+                    echo "[+] Updated webhook URL in $artifact"
+                else
+                    echo "[!] No URL provided, keeping default for $artifact"
+                fi
+            fi
+        done
     else
         echo "[*] No server event artifacts selected. Continuing with defaults."
     fi
