@@ -127,6 +127,96 @@ with open(config_path, 'w') as f:
     fi
 fi
 
+# ─── Phase 2b: Artifact selection for server monitoring ──────────────────────
+
+if [ ${#RULESETS[@]} -gt 0 ]; then
+    echo ""
+    echo "────────────────────────────────────────────────────"
+    echo " Select artifacts for default server monitoring"
+    echo "────────────────────────────────────────────────────"
+    echo ""
+
+    echo "[?] Are any of the following artifacts server events?"
+    for i in "${!RULESETS[@]}"; do
+        echo "    $((i+1))) ${RULESETS[$i]}"
+    done
+
+    echo ""
+    echo "[?] Enter the numbers of the server event artifacts (space or comma separated)."
+    echo "    Example: 1 3  or  1,2,3  or  'all' for everything, or 'none' to skip."
+    read -rp "    Selection: " SRV_SELECTION
+
+    SRV_SELECTED=()
+    if [[ "$SRV_SELECTION" =~ ^[Nn]one$ ]] || [ -z "$SRV_SELECTION" ]; then
+        SRV_SELECTED=()
+    elif [[ "$SRV_SELECTION" =~ ^[Aa]ll$ ]]; then
+        SRV_SELECTED=("${RULESETS[@]}")
+    else
+        SRV_SELECTION="${SRV_SELECTION//,/ }"
+        for num in $SRV_SELECTION; do
+            idx=$((num - 1))
+            if [ "$idx" -ge 0 ] && [ "$idx" -lt "${#RULESETS[@]}" ]; then
+                SRV_SELECTED+=("${RULESETS[$idx]}")
+            else
+                echo "[!] Invalid selection: $num (skipping)"
+            fi
+        done
+    fi
+
+    if [ ${#SRV_SELECTED[@]} -gt 0 ]; then
+        echo ""
+        echo "[*] Adding to default_server_monitoring_artifacts:"
+        for artifact in "${SRV_SELECTED[@]}"; do
+            echo "    - $artifact"
+        done
+
+        # Use Python to insert server monitoring artifacts into the YAML config
+        python3 -c "
+import sys, re
+config_path = sys.argv[1]
+artifacts = sys.argv[2:]
+with open(config_path) as f:
+    lines = f.readlines()
+# Try to find an existing default_server_monitoring_artifacts: key
+found = False
+for i, line in enumerate(lines):
+    if 'default_server_monitoring_artifacts:' in line:
+        found = True
+        indent = ''
+        if i+1 < len(lines):
+            m = re.match(r'^(\s*)-', lines[i+1])
+            if m:
+                indent = m.group(1)
+        j = i + 1
+        while j < len(lines) and lines[j].strip().startswith('-'):
+            j += 1
+        for artifact in reversed(artifacts):
+            lines.insert(j, f'{indent}- {artifact}\n')
+        break
+if not found:
+    # Determine indent from default_client_monitoring_artifacts for consistency
+    indent = '- '
+    for i, line in enumerate(lines):
+        if 'default_client_monitoring_artifacts:' in line:
+            if i+1 < len(lines):
+                m = re.match(r'^(\s*)-', lines[i+1])
+                if m:
+                    indent = m.group(1) + '- '
+            break
+    lines.append('default_server_monitoring_artifacts:\n')
+    for artifact in artifacts:
+        lines.append(f'{indent}{artifact}\n')
+with open(config_path, 'w') as f:
+    f.writelines(lines)
+" "$WORK_DIR/server.config.yaml" "${SRV_SELECTED[@]}"
+
+        echo ""
+        echo "[+] Server config updated with server monitoring artifacts."
+    else
+        echo "[*] No server event artifacts selected. Continuing with defaults."
+    fi
+fi
+
 # ─── Phase 3: Start services ────────────────────────────────────────────────
 
 echo ""
