@@ -196,22 +196,27 @@ for i, line in enumerate(lines):
 if not found:
     # Insert right after the default_client_monitoring_artifacts list
     insert_at = len(lines)
-    indent = '- '
+    key_indent = ''
+    item_indent = '- '
     for i, line in enumerate(lines):
         if 'default_client_monitoring_artifacts:' in line:
+            # Match the indentation of the key itself
+            km = re.match(r'^(\s*)', line)
+            if km:
+                key_indent = km.group(1)
             if i+1 < len(lines):
                 m = re.match(r'^(\s*)-', lines[i+1])
                 if m:
-                    indent = m.group(1) + '- '
+                    item_indent = m.group(1) + '- '
             # Find end of the client artifacts list
             j = i + 1
             while j < len(lines) and lines[j].strip().startswith('-'):
                 j += 1
             insert_at = j
             break
-    new_lines = ['default_server_monitoring_artifacts:\n']
+    new_lines = [f'{key_indent}default_server_monitoring_artifacts:\n']
     for artifact in artifacts:
-        new_lines.append(f'{indent}{artifact}\n')
+        new_lines.append(f'{item_indent}{artifact}\n')
     for nl in reversed(new_lines):
         lines.insert(insert_at, nl)
 with open(config_path, 'w') as f:
