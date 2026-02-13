@@ -1,0 +1,28 @@
+name: Custom.Server.Alerts.NotepadWebhook
+type: SERVER_EVENT
+description: Send webhook when notepad detected
+
+parameters:
+  - name: WebhookURL
+    default: "https://your.webhook.url"
+
+sources:
+  - query: |
+      LET events = SELECT *,
+          client_info(client_id=ClientId).os_info.hostname AS Hostname
+      FROM watch_monitoring(artifact="Custom.Events.Sysmon.Notepad")
+
+      SELECT * FROM foreach(row=events, query={
+        SELECT * FROM http_client(
+          method="POST",
+          url=WebhookURL,
+          headers=dict(`Content-Type`="application/json"),
+          data=serialize(
+            item=dict(text=format(
+              format="Notepad detected on %v by %v: %v",
+              args=[Hostname, User, CommandLine]
+            )),
+            format="json"
+          )
+        )
+      })
