@@ -19,7 +19,7 @@ sources:
           headers=dict(`Content-Type`="application/json"),
           data=serialize(
             item=dict(text=format(
-              format="Notepad detected on %v by %v: %v",
+              format="Triggered on %v by %v: %v",
               args=[Hostname, User, CommandLine]
             )),
             format="json"
