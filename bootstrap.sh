@@ -194,7 +194,8 @@ for i, line in enumerate(lines):
             lines.insert(j, f'{indent}- {artifact}\n')
         break
 if not found:
-    # Determine indent from default_client_monitoring_artifacts for consistency
+    # Insert right after the default_client_monitoring_artifacts list
+    insert_at = len(lines)
     indent = '- '
     for i, line in enumerate(lines):
         if 'default_client_monitoring_artifacts:' in line:
@@ -202,10 +203,17 @@ if not found:
                 m = re.match(r'^(\s*)-', lines[i+1])
                 if m:
                     indent = m.group(1) + '- '
+            # Find end of the client artifacts list
+            j = i + 1
+            while j < len(lines) and lines[j].strip().startswith('-'):
+                j += 1
+            insert_at = j
             break
-    lines.append('default_server_monitoring_artifacts:\n')
+    new_lines = ['default_server_monitoring_artifacts:\n']
     for artifact in artifacts:
-        lines.append(f'{indent}{artifact}\n')
+        new_lines.append(f'{indent}{artifact}\n')
+    for nl in reversed(new_lines):
+        lines.insert(insert_at, nl)
 with open(config_path, 'w') as f:
     f.writelines(lines)
 " "$WORK_DIR/server.config.yaml" "${SRV_SELECTED[@]}"
