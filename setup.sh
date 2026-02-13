@@ -8,6 +8,7 @@ PERSIST_DIR="/opt/htb-monitoring"
 VELO_VERSION="v0.75.6"
 VELO_RELEASE="https://github.com/Velocidex/velociraptor/releases/download/v0.75"
 SYSMON_URL="https://raw.githubusercontent.com/x0rc1st/sentient/main/Sysmon64.exe"
+SYSMON_CONFIG_URL="https://raw.githubusercontent.com/x0rc1st/sentient/main/sysmonconfig-excludes-only.xml"
 REPO_API="https://api.github.com/repos/x0rc1st/sentient/contents/rulesets"
 RAW_BASE="https://raw.githubusercontent.com/x0rc1st/sentient/main/rulesets"
 
@@ -24,6 +25,9 @@ curl -L -o "$PERSIST_DIR/velociraptor.exe" \
 
 echo "[*] Downloading Sysmon64.exe..."
 curl -L -o "$PERSIST_DIR/Sysmon64.exe" "$SYSMON_URL"
+
+echo "[*] Downloading Sysmon config..."
+curl -L -o "$PERSIST_DIR/sysmonconfig-excludes-only.xml" "$SYSMON_CONFIG_URL"
 
 echo "[*] Downloading rulesets..."
 RULESET_FILES=$(curl -s "$REPO_API" | grep '"name"' | grep -v '.gitkeep' | sed 's/.*"name": "\(.*\)".*/\1/')
