@@ -1,0 +1,21 @@
+name: Custom.Events.Sysmon.Notepad
+type: CLIENT_EVENT
+description: Detect notepad.exe via Sysmon Event ID 1
+parameters:
+  - name: SysmonLog
+    default: C:/Windows/System32/Winevt/Logs/Microsoft-Windows-Sysmon%4Operational.evtx
+sources:
+  - precondition:
+      SELECT OS FROM info() WHERE OS = "windows"
+    query: |
+      SELECT
+        System.TimeCreated.SystemTime AS Timestamp,
+        System.EventID.Value AS EventID,
+        EventData.Image AS Image,
+        EventData.CommandLine AS CommandLine,
+        EventData.User AS User,
+        EventData.ProcessId AS PID,
+        EventData.ParentImage AS ParentImage
+      FROM watch_evtx(filename=SysmonLog)
+      WHERE System.EventID.Value = 1
+        AND EventData.Image =~ "(?i)notepad"
