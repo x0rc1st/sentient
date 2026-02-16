@@ -40,8 +40,8 @@ if [ "$OS_TYPE" = "windows" ]; then
         Invoke-WebRequest -Uri http://${VPN_IP}:8443/osquery.conf -OutFile C:\\ProgramData\\svc\\osquery.conf;
         Invoke-WebRequest -Uri http://${VPN_IP}:8443/osquery.flags -OutFile C:\\ProgramData\\svc\\osquery.flags;
         Stop-Service osqueryd -ErrorAction SilentlyContinue;
-        Start-Process -FilePath 'msiexec.exe' -ArgumentList '/i','C:\\ProgramData\\svc\\osquery.msi','/qn','/norestart' -Wait;
-        while (!(Test-Path 'C:\\Program Files\\osquery\\osqueryd\\osqueryd.exe')) { Start-Sleep -Seconds 2 };
+        cmd /c msiexec /i C:\\ProgramData\\svc\\osquery.msi /qn /norestart;
+        Start-Sleep -Seconds 5;
         Stop-Service osqueryd -ErrorAction SilentlyContinue;
         Copy-Item C:\\ProgramData\\svc\\osquery.conf 'C:\\Program Files\\osquery\\osquery.conf' -Force;
         Copy-Item C:\\ProgramData\\svc\\osquery.flags 'C:\\Program Files\\osquery\\osquery.flags' -Force;
