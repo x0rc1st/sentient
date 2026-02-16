@@ -4,7 +4,7 @@
 --enable_windows_events_subscriber=true
 --windows_event_channels=Microsoft-Windows-Sysmon/Operational,Security,System,Application
 --logger_plugin=filesystem
---logger_path=C:\Program Files\osquery\log
---database_path=C:\Program Files\osquery\osquery.db
+--logger_path=C:\ProgramData\osquery\log
+--database_path=C:\ProgramData\osquery\osquery.db
 --config_plugin=filesystem
---config_path=C:\Program Files\osquery\osquery.conf
+--config_path=C:\ProgramData\osquery\osquery.conf

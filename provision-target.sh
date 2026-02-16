@@ -36,15 +36,18 @@ if [ "$OS_TYPE" = "windows" ]; then
     echo "[*] Deploying osquery to Windows via psexec..."
     impacket-psexec "${CREDS}@${TARGET_IP}" \
       "powershell -c \"
-        Invoke-WebRequest -Uri http://${VPN_IP}:8443/osquery.msi -OutFile C:\\ProgramData\\svc\\osquery.msi;
+        Invoke-WebRequest -Uri http://${VPN_IP}:8443/osquery.zip -OutFile C:\\ProgramData\\svc\\osquery.zip;
         Invoke-WebRequest -Uri http://${VPN_IP}:8443/osquery.conf -OutFile C:\\ProgramData\\svc\\osquery.conf;
         Invoke-WebRequest -Uri http://${VPN_IP}:8443/osquery.flags -OutFile C:\\ProgramData\\svc\\osquery.flags;
         Stop-Service osqueryd -ErrorAction SilentlyContinue;
-        cmd /c msiexec /i C:\\ProgramData\\svc\\osquery.msi /qn /norestart;
-        Start-Sleep -Seconds 5;
-        Stop-Service osqueryd -ErrorAction SilentlyContinue;
-        Copy-Item C:\\ProgramData\\svc\\osquery.conf 'C:\\Program Files\\osquery\\osquery.conf' -Force;
-        Copy-Item C:\\ProgramData\\svc\\osquery.flags 'C:\\Program Files\\osquery\\osquery.flags' -Force;
+        sc.exe delete osqueryd | Out-Null;
+        Remove-Item C:\\ProgramData\\osquery -Recurse -Force -ErrorAction SilentlyContinue;
+        New-Item -ItemType Directory -Path C:\\ProgramData\\osquery -Force | Out-Null;
+        Expand-Archive C:\\ProgramData\\svc\\osquery.zip C:\\ProgramData\\svc\\osquery_tmp -Force;
+        Get-ChildItem C:\\ProgramData\\svc\\osquery_tmp -Recurse -File | ForEach-Object { Copy-Item \$_.FullName C:\\ProgramData\\osquery\\ -Force };
+        Copy-Item C:\\ProgramData\\svc\\osquery.conf C:\\ProgramData\\osquery\\osquery.conf -Force;
+        Copy-Item C:\\ProgramData\\svc\\osquery.flags C:\\ProgramData\\osquery\\osquery.flags -Force;
+        New-Service -Name osqueryd -BinaryPathName 'C:\\ProgramData\\osquery\\osqueryd.exe --flagfile=C:\\ProgramData\\osquery\\osquery.flags' -StartupType Automatic -ErrorAction SilentlyContinue;
         Start-Service osqueryd;
         Get-Service osqueryd | Select-Object Status,Name
       \""
