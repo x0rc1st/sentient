@@ -41,10 +41,11 @@ if [ "$OS_TYPE" = "windows" ]; then
         Invoke-WebRequest -Uri http://${VPN_IP}:8443/osquery.flags -OutFile C:\\ProgramData\\svc\\osquery.flags;
         Expand-Archive C:\\ProgramData\\svc\\osquery.zip C:\\ProgramData\\svc\\osquery_tmp -Force;
         \$src = (Get-ChildItem C:\\ProgramData\\svc\\osquery_tmp -Recurse -Filter osqueryd.exe | Select-Object -First 1).DirectoryName;
-        Copy-Item -Path (\$src + '\\*') -Destination 'C:\\Program Files\\osquery\\' -Recurse -Force;
+        New-Item -ItemType Directory -Path 'C:\\Program Files\\osquery' -Force | Out-Null;
         New-Item -ItemType Directory -Path 'C:\\Program Files\\osquery\\osqueryd' -Force | Out-Null;
         New-Item -ItemType Directory -Path 'C:\\Program Files\\osquery\\log' -Force | Out-Null;
         New-Item -ItemType Directory -Path 'C:\\Program Files\\osquery\\packs' -Force | Out-Null;
+        Copy-Item -Path (\$src + '\\*') -Destination 'C:\\Program Files\\osquery\\' -Recurse -Force;
         Copy-Item 'C:\\Program Files\\osquery\\osqueryd.exe' 'C:\\Program Files\\osquery\\osqueryd\\osqueryd.exe' -Force;
         Copy-Item C:\\ProgramData\\svc\\osquery.conf 'C:\\Program Files\\osquery\\osquery.conf' -Force;
         Copy-Item C:\\ProgramData\\svc\\osquery.flags 'C:\\Program Files\\osquery\\osquery.flags' -Force;
