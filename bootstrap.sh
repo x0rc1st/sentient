@@ -277,6 +277,9 @@ cp "$PERSIST_DIR/velociraptor.exe"            "$WORK_DIR/assets/"
 cp "$WORK_DIR/client.config.yaml"             "$WORK_DIR/assets/"
 cp "$PERSIST_DIR/Sysmon64.exe"                "$WORK_DIR/assets/"
 cp "$PERSIST_DIR/sysmonconfig-excludes-only.xml" "$WORK_DIR/assets/"
+cp "$PERSIST_DIR/osquery.msi"                 "$WORK_DIR/assets/"
+cp "$PERSIST_DIR/osquery.conf"                "$WORK_DIR/assets/"
+cp "$PERSIST_DIR/osquery.flags"               "$WORK_DIR/assets/"
 cd "$WORK_DIR/assets"
 python3 -m http.server 8443 --bind 0.0.0.0 > "$WORK_DIR/asset-server.log" 2>&1 &
 

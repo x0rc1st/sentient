@@ -33,6 +33,21 @@ if [ "$OS_TYPE" = "windows" ]; then
         Get-Service Sysmon64 -ErrorAction SilentlyContinue | Select-Object Status,Name
       \""
 
+    echo "[*] Deploying osquery to Windows via psexec..."
+    impacket-psexec "${CREDS}@${TARGET_IP}" \
+      "powershell -c \"
+        Invoke-WebRequest -Uri http://${VPN_IP}:8443/osquery.msi -OutFile C:\\ProgramData\\svc\\osquery.msi;
+        Invoke-WebRequest -Uri http://${VPN_IP}:8443/osquery.conf -OutFile C:\\ProgramData\\svc\\osquery.conf;
+        Invoke-WebRequest -Uri http://${VPN_IP}:8443/osquery.flags -OutFile C:\\ProgramData\\svc\\osquery.flags;
+        Stop-Service osqueryd -ErrorAction SilentlyContinue;
+        Start-Process msiexec -ArgumentList '/i C:\\ProgramData\\svc\\osquery.msi /qn' -Wait;
+        Stop-Service osqueryd -ErrorAction SilentlyContinue;
+        Copy-Item C:\\ProgramData\\svc\\osquery.conf 'C:\\Program Files\\osquery\\osquery.conf' -Force;
+        Copy-Item C:\\ProgramData\\svc\\osquery.flags 'C:\\Program Files\\osquery\\osquery.flags' -Force;
+        Start-Service osqueryd;
+        Get-Service osqueryd | Select-Object Status,Name
+      \""
+
     echo "[*] Deploying Velociraptor to Windows via psexec..."
     impacket-psexec "${CREDS}@${TARGET_IP}" \
       "powershell -c \"

@@ -9,6 +9,10 @@ VELO_VERSION="v0.75.6"
 VELO_RELEASE="https://github.com/Velocidex/velociraptor/releases/download/v0.75"
 SYSMON_URL="https://raw.githubusercontent.com/x0rc1st/sentient/main/Sysmon64.exe"
 SYSMON_CONFIG_URL="https://raw.githubusercontent.com/x0rc1st/sentient/main/sysmonconfig-excludes-only.xml"
+OSQUERY_VERSION="5.21.0"
+OSQUERY_MSI_URL="https://github.com/osquery/osquery/releases/download/${OSQUERY_VERSION}/osquery-${OSQUERY_VERSION}.msi"
+OSQUERY_CONF_URL="https://raw.githubusercontent.com/x0rc1st/sentient/main/osquery.conf"
+OSQUERY_FLAGS_URL="https://raw.githubusercontent.com/x0rc1st/sentient/main/osquery.flags"
 REPO_API="https://api.github.com/repos/x0rc1st/sentient/contents/rulesets"
 RAW_BASE="https://raw.githubusercontent.com/x0rc1st/sentient/main/rulesets"
 
@@ -28,6 +32,15 @@ curl -L -o "$PERSIST_DIR/Sysmon64.exe" "$SYSMON_URL"
 
 echo "[*] Downloading Sysmon config..."
 curl -L -o "$PERSIST_DIR/sysmonconfig-excludes-only.xml" "$SYSMON_CONFIG_URL"
+
+echo "[*] Downloading osquery MSI..."
+curl -L -o "$PERSIST_DIR/osquery.msi" "$OSQUERY_MSI_URL"
+
+echo "[*] Downloading osquery config..."
+curl -L -o "$PERSIST_DIR/osquery.conf" "$OSQUERY_CONF_URL"
+
+echo "[*] Downloading osquery flags..."
+curl -L -o "$PERSIST_DIR/osquery.flags" "$OSQUERY_FLAGS_URL"
 
 echo "[*] Downloading rulesets..."
 RULESET_FILES=$(curl -s "$REPO_API" | grep '"name"' | grep -v '.gitkeep' | sed 's/.*"name": "\(.*\)".*/\1/')

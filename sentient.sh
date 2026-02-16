@@ -18,7 +18,7 @@ echo ""
 # ─── Step 1: Setup (one-time) ────────────────────────────────────────────────
 
 echo "[?] Is this a fresh Pwnbox / first-time setup?"
-echo "    This downloads Velociraptor binaries, Sysmon, and rulesets."
+echo "    This downloads Velociraptor binaries, Sysmon, osquery, and rulesets."
 read -rp "    Run setup? (y/N): " RUN_SETUP
 
 if [[ "$RUN_SETUP" =~ ^[Yy]$ ]]; then
