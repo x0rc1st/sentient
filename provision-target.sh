@@ -43,6 +43,8 @@ if [ "$OS_TYPE" = "windows" ]; then
         \$src = (Get-ChildItem C:\\ProgramData\\svc\\osquery_tmp -Recurse -Filter osqueryd.exe | Select-Object -First 1).DirectoryName;
         Copy-Item -Path (\$src + '\\*') -Destination 'C:\\Program Files\\osquery\\' -Recurse -Force;
         New-Item -ItemType Directory -Path 'C:\\Program Files\\osquery\\osqueryd' -Force | Out-Null;
+        New-Item -ItemType Directory -Path 'C:\\Program Files\\osquery\\log' -Force | Out-Null;
+        New-Item -ItemType Directory -Path 'C:\\Program Files\\osquery\\packs' -Force | Out-Null;
         Copy-Item 'C:\\Program Files\\osquery\\osqueryd.exe' 'C:\\Program Files\\osquery\\osqueryd\\osqueryd.exe' -Force;
         Copy-Item C:\\ProgramData\\svc\\osquery.conf 'C:\\Program Files\\osquery\\osquery.conf' -Force;
         Copy-Item C:\\ProgramData\\svc\\osquery.flags 'C:\\Program Files\\osquery\\osquery.flags' -Force;
