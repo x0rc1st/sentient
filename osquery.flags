@@ -1,4 +1,5 @@
 --force=true
+--pidfile=C:\ProgramData\osquery\osqueryd.pidfile
 --disable_events=false
 --enable_windows_events_publisher=true
 --enable_windows_events_subscriber=true

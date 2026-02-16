@@ -39,6 +39,7 @@ if [ "$OS_TYPE" = "windows" ]; then
         Invoke-WebRequest -Uri http://${VPN_IP}:8443/osquery.zip -OutFile C:\\ProgramData\\svc\\osquery.zip;
         Invoke-WebRequest -Uri http://${VPN_IP}:8443/osquery.conf -OutFile C:\\ProgramData\\svc\\osquery.conf;
         Invoke-WebRequest -Uri http://${VPN_IP}:8443/osquery.flags -OutFile C:\\ProgramData\\svc\\osquery.flags;
+        Stop-Process -Name osqueryd -Force -ErrorAction SilentlyContinue;
         Stop-Service osqueryd -ErrorAction SilentlyContinue;
         sc.exe delete osqueryd | Out-Null;
         Remove-Item C:\\ProgramData\\osquery -Recurse -Force -ErrorAction SilentlyContinue;
