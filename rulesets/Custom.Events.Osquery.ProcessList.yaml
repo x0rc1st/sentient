@@ -5,7 +5,7 @@ parameters:
   - name: Period
     default: "60"
   - name: OsqueryPath
-    default: "C:\\Program Files\\osquery\\osqueryd.exe"
+    default: "C:\\Program Files\\osquery\\osqueryi.exe"
   - name: Query
     default: "SELECT pid, name, path, cmdline, uid, parent FROM processes"
 sources:
@@ -16,7 +16,7 @@ sources:
         row={SELECT now() AS Tick FROM clock(period=atoi(string=Period))},
         query={
           LET result = SELECT * FROM execve(
-            argv=[OsqueryPath, "-S", "--ephemeral", "--json", Query],
+            argv=[OsqueryPath, "--json", Query],
             length=10000000)
           SELECT * FROM foreach(row=result,
             query={SELECT Tick, * FROM parse_json_array(data=Stdout)})
