@@ -12,12 +12,12 @@ sources:
   - precondition:
       SELECT OS FROM info() WHERE OS = "windows"
     query: |
+      LET osquery_result(Tick) = SELECT * FROM foreach(
+        row={SELECT * FROM execve(
+          argv=[OsqueryPath, "--json", Query],
+          length=10000000)},
+        query={SELECT Tick, * FROM parse_json_array(data=Stdout)})
+
       SELECT * FROM foreach(
         row={SELECT now() AS Tick FROM clock(period=atoi(string=Period))},
-        query={
-          LET result = SELECT * FROM execve(
-            argv=[OsqueryPath, "--json", Query],
-            length=10000000)
-          SELECT * FROM foreach(row=result,
-            query={SELECT Tick, * FROM parse_json_array(data=Stdout)})
-        })
+        query={SELECT * FROM osquery_result(Tick=Tick)})
