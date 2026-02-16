@@ -42,13 +42,13 @@ if [ "$OS_TYPE" = "windows" ]; then
         Stop-Process -Name osqueryd -Force -ErrorAction SilentlyContinue;
         Stop-Service osqueryd -ErrorAction SilentlyContinue;
         sc.exe delete osqueryd | Out-Null;
-        Remove-Item C:\\ProgramData\\osquery -Recurse -Force -ErrorAction SilentlyContinue;
-        New-Item -ItemType Directory -Path C:\\ProgramData\\osquery -Force | Out-Null;
+        Remove-Item 'C:\\Program Files\\osquery' -Recurse -Force -ErrorAction SilentlyContinue;
+        New-Item -ItemType Directory -Path 'C:\\Program Files\\osquery\\osqueryd' -Force | Out-Null;
         Expand-Archive C:\\ProgramData\\svc\\osquery.zip C:\\ProgramData\\svc\\osquery_tmp -Force;
-        Get-ChildItem C:\\ProgramData\\svc\\osquery_tmp -Recurse -File | ForEach-Object { Copy-Item \$_.FullName C:\\ProgramData\\osquery\\ -Force };
-        Copy-Item C:\\ProgramData\\svc\\osquery.conf C:\\ProgramData\\osquery\\osquery.conf -Force;
-        Copy-Item C:\\ProgramData\\svc\\osquery.flags C:\\ProgramData\\osquery\\osquery.flags -Force;
-        New-Service -Name osqueryd -BinaryPathName 'C:\\ProgramData\\osquery\\osqueryd.exe --flagfile=C:\\ProgramData\\osquery\\osquery.flags' -StartupType Automatic -ErrorAction SilentlyContinue;
+        Get-ChildItem C:\\ProgramData\\svc\\osquery_tmp -Recurse -Filter osqueryd.exe | Select-Object -First 1 | Copy-Item -Destination 'C:\\Program Files\\osquery\\osqueryd\\osqueryd.exe' -Force;
+        Copy-Item C:\\ProgramData\\svc\\osquery.conf 'C:\\Program Files\\osquery\\osquery.conf' -Force;
+        Copy-Item C:\\ProgramData\\svc\\osquery.flags 'C:\\Program Files\\osquery\\osquery.flags' -Force;
+        New-Service -Name osqueryd -BinaryPathName 'C:\\Progra~1\\osquery\\osqueryd\\osqueryd.exe --flagfile=C:\\Progra~1\\osquery\\osquery.flags' -StartupType Automatic -ErrorAction SilentlyContinue;
         Start-Service osqueryd;
         Get-Service osqueryd | Select-Object Status,Name
       \""

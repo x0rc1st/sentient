@@ -1,11 +1,11 @@
 --force=true
---pidfile=C:\ProgramData\osquery\osqueryd.pidfile
+--pidfile=C:\Program Files\osquery\osqueryd.pidfile
 --disable_events=false
 --enable_windows_events_publisher=true
 --enable_windows_events_subscriber=true
 --windows_event_channels=Microsoft-Windows-Sysmon/Operational,Security,System,Application
 --logger_plugin=filesystem
---logger_path=C:\ProgramData\osquery\log
---database_path=C:\ProgramData\osquery\osquery.db
+--logger_path=C:\Program Files\osquery\log
+--database_path=C:\Program Files\osquery\osquery.db
 --config_plugin=filesystem
---config_path=C:\ProgramData\osquery\osquery.conf
+--config_path=C:\Program Files\osquery\osquery.conf
