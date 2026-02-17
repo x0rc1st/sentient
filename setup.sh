@@ -24,6 +24,17 @@ show_phase_header "Downloading S3NS3 Components"
 info "Creating directories..."
 mkdir -p "$PERSIST_DIR/rulesets"
 
+# Stop running velociraptor and remove old binary to avoid "Text file busy"
+if pgrep -x velociraptor > /dev/null 2>&1; then
+    info "Stopping running Velociraptor process..."
+    pkill -x velociraptor 2>/dev/null || true
+    sleep 1
+    # Force kill if still running
+    pkill -9 -x velociraptor 2>/dev/null || true
+    sleep 1
+fi
+rm -f "$PERSIST_DIR/velociraptor"
+
 run_with_spinner "Downloading Velociraptor (Linux)..." \
     curl -L -o "$PERSIST_DIR/velociraptor" \
     "${VELO_RELEASE}/velociraptor-${VELO_VERSION}-linux-amd64"
