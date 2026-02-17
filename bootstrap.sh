@@ -264,7 +264,7 @@ run_with_spinner "Extracting API config..." \
     $PERSIST_DIR/velociraptor config api_client \
     --config "$WORK_DIR/server.config.yaml" \
     --name admin --role administrator \
-    --output "$WORK_DIR/api.config.yaml"
+    "$WORK_DIR/api.config.yaml"
 
 # 6. Start the Velociraptor server
 $PERSIST_DIR/velociraptor frontend \
