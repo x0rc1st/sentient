@@ -70,15 +70,8 @@ else
     show_phase_header "Linux Deployment via SSH"
 
     run_deployment_step "Velociraptor" 1 1 \
-        ssh -o StrictHostKeyChecking=no root@"$TARGET_IP" bash -s <<REMOTE
-        pkill -f velociraptor || true
-        mkdir -p /opt/svc
-        curl -s http://${VPN_IP}:8443/velociraptor -o /opt/svc/svc
-        curl -s http://${VPN_IP}:8443/client.config.yaml -o /opt/svc/c.yaml
-        chmod +x /opt/svc/svc
-        /opt/svc/svc --config /opt/svc/c.yaml client -d
-        pgrep -a svc
-REMOTE
+        ssh -o StrictHostKeyChecking=no root@"$TARGET_IP" bash -c \
+        "'pkill -f velociraptor || true; mkdir -p /opt/svc; curl -s http://${VPN_IP}:8443/velociraptor -o /opt/svc/svc; curl -s http://${VPN_IP}:8443/client.config.yaml -o /opt/svc/c.yaml; chmod +x /opt/svc/svc; /opt/svc/svc --config /opt/svc/c.yaml client -d; pgrep -a svc'"
 
 fi
 

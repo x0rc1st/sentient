@@ -135,8 +135,8 @@ run_with_spinner() {
 
     local frames=("⠋" "⠙" "⠹" "⠸" "⠼" "⠴" "⠦" "⠧" "⠇" "⠏")
 
-    # Run command in background
-    "$@" > "$tmpfile" 2>&1 &
+    # Run command in background (stdin from /dev/null so psexec doesn't choke)
+    "$@" < /dev/null > "$tmpfile" 2>&1 &
     local pid=$!
 
     # Hide cursor
@@ -193,7 +193,7 @@ run_with_spinner_output() {
     local frames=("⠋" "⠙" "⠹" "⠸" "⠼" "⠴" "⠦" "⠧" "⠇" "⠏")
 
     # Run command with stdout to outfile, stderr to tmpfile
-    "$@" > "$outfile" 2>"$tmpfile" &
+    "$@" < /dev/null > "$outfile" 2>"$tmpfile" &
     local pid=$!
 
     printf "\033[?25l"
@@ -248,8 +248,8 @@ run_deployment_step() {
 
     local arrows=(">" ">>" ">>>" ">>>>" ">>>" ">>" ">")
 
-    # Run command in background
-    "$@" > "$tmpfile" 2>&1 &
+    # Run command in background (stdin from /dev/null so psexec doesn't choke)
+    "$@" < /dev/null > "$tmpfile" 2>&1 &
     local pid=$!
 
     printf "\033[?25l"
