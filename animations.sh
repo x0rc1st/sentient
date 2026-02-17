@@ -149,9 +149,9 @@ run_with_spinner() {
         sleep 0.08
     done
 
-    # Get exit code
-    wait "$pid"
-    local exit_code=$?
+    # Get exit code (|| prevents set -e from killing the script)
+    local exit_code=0
+    wait "$pid" || exit_code=$?
 
     # Clear line and show cursor
     printf "\r\033[K"
@@ -204,8 +204,8 @@ run_with_spinner_output() {
         sleep 0.08
     done
 
-    wait "$pid"
-    local exit_code=$?
+    local exit_code=0
+    wait "$pid" || exit_code=$?
 
     printf "\r\033[K"
     printf "\033[?25h"
@@ -260,8 +260,8 @@ run_deployment_step() {
         sleep 0.2
     done
 
-    wait "$pid"
-    local exit_code=$?
+    local exit_code=0
+    wait "$pid" || exit_code=$?
 
     printf "\r\033[K"
     printf "\033[?25h"
