@@ -101,6 +101,7 @@ VPN_IP=$(ip -4 addr show tun0 2>/dev/null | grep -oP '(?<=inet\s)\d+(\.\d+){3}' 
 show_summary_box \
     "$(printf "${C_CYAN}Velociraptor GUI:${C_RESET}  https://$VPN_IP:8889")" \
     "$(printf "${C_CYAN}Credentials:${C_RESET}       admin / admin")" \
-    "$(printf "${C_CYAN}Asset Server:${C_RESET}      http://$VPN_IP:8443")"
+    "$(printf "${C_CYAN}Asset Server:${C_RESET}      http://$VPN_IP:8443")" \
+    "$(printf "${C_CYAN}Webhook:${C_RESET}           http://127.0.0.1:9000")"
 
 typewrite "$(printf "${C_GREEN}All done. Happy hunting!${C_RESET}")"
