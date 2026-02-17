@@ -23,16 +23,16 @@ cols=$(tput cols 2>/dev/null || echo 80)
 
 echo ""
 if [ "$cols" -lt 72 ]; then
-    printf "${C_GREEN}${C_BOLD}  >>> SENTIENT — HTB Monitoring Framework <<<${C_RESET}\n"
+    printf "${C_GREEN}${C_BOLD}  >>> S3NS3 — HTB Monitoring Framework <<<${C_RESET}\n"
 else
     printf "${C_GREEN}${C_BOLD}"
     cat <<'BANNER'
-   ███████╗███████╗███╗   ██╗████████╗██╗███████╗███╗   ██╗████████╗
-   ██╔════╝██╔════╝████╗  ██║╚══██╔══╝██║██╔════╝████╗  ██║╚══██╔══╝
-   ███████╗█████╗  ██╔██╗ ██║   ██║   ██║█████╗  ██╔██╗ ██║   ██║
-   ╚════██║██╔══╝  ██║╚██╗██║   ██║   ██║██╔══╝  ██║╚██╗██║   ██║
-   ███████║███████╗██║ ╚████║   ██║   ██║███████╗██║ ╚████║   ██║
-   ╚══════╝╚══════╝╚═╝  ╚═══╝   ╚═╝   ╚═╝╚══════╝╚═╝  ╚═══╝   ╚═╝
+   ███████╗██████╗ ███╗   ██╗███████╗██████╗
+   ██╔════╝╚════██╗████╗  ██║██╔════╝╚════██╗
+   ███████╗ █████╔╝██╔██╗ ██║███████╗ █████╔╝
+   ╚════██║ ╚═══██╗██║╚██╗██║╚════██║ ╚═══██╗
+   ███████║██████╔╝██║ ╚████║███████║██████╔╝
+   ╚══════╝╚═════╝ ╚═╝  ╚═══╝╚══════╝╚═════╝
 BANNER
     printf "${C_RESET}"
     printf "${C_GRAY}   ──────────────────────────────────────────────────────────────────${C_RESET}\n"
@@ -53,7 +53,7 @@ if $ANIMATE; then
     printf "\033[?25l"
     i=0
     while kill -0 "$pid" 2>/dev/null; do
-        printf "\r${C_CYAN}  %s${C_RESET} Cloning Sentient repository..." "${frames[$i]}"
+        printf "\r${C_CYAN}  %s${C_RESET} Cloning S3NS3 repository..." "${frames[$i]}"
         i=$(( (i + 1) % ${#frames[@]} ))
         sleep 0.08
     done
@@ -78,7 +78,7 @@ fi
 # ─── Launch ──────────────────────────────────────────────────────────────────
 
 echo ""
-printf "${C_GREEN}${C_BOLD}  ▶${C_RESET} Launching Sentient...\n"
+printf "${C_GREEN}${C_BOLD}  ▶${C_RESET} Launching S3NS3...\n"
 echo ""
 
 cd sentient

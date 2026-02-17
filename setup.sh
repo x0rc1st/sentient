@@ -19,7 +19,7 @@ OSQUERY_FLAGS_URL="https://raw.githubusercontent.com/x0rc1st/sentient/main/osque
 REPO_API="https://api.github.com/repos/x0rc1st/sentient/contents/rulesets"
 RAW_BASE="https://raw.githubusercontent.com/x0rc1st/sentient/main/rulesets"
 
-show_phase_header "Downloading Sentient Components"
+show_phase_header "Downloading S3NS3 Components"
 
 info "Creating directories..."
 mkdir -p "$PERSIST_DIR/rulesets"
