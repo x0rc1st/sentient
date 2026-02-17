@@ -234,7 +234,7 @@ run_deployment_step() {
 
     if ! $SENTIENT_ANIMATE; then
         printf "  [%s/%s] Deploying %s...\n" "$step" "$total" "$label"
-        if "$@" > "$tmpfile" 2>&1; then
+        if printf 'exit\n' | "$@" > "$tmpfile" 2>&1; then
             tail -3 "$tmpfile"
             rm -f "$tmpfile"
             return 0
@@ -248,8 +248,11 @@ run_deployment_step() {
 
     local arrows=(">" ">>" ">>>" ">>>>" ">>>" ">>" ">")
 
-    # Run command in background (stdin from /dev/null so psexec doesn't choke)
-    "$@" < /dev/null > "$tmpfile" 2>&1 &
+    # Pipe 'exit' to stdin so psexec's RemoteShell closes cleanly instead of
+    # crashing on EOF (do_EOF AttributeError). The command arg is executed in
+    # RemoteShell.__init__ before cmdloop() reads stdin, so 'exit' only fires
+    # after the actual work is done.
+    printf 'exit\n' | "$@" > "$tmpfile" 2>&1 &
     local pid=$!
 
     printf "\033[?25l"
