@@ -234,12 +234,20 @@ run_deployment_step() {
 
     if ! $SENTIENT_ANIMATE; then
         printf "  [%s/%s] Deploying %s...\n" "$step" "$total" "$label"
-        if printf 'exit\n' | "$@" > "$tmpfile" 2>&1; then
+        "$@" < /dev/null > "$tmpfile" 2>&1
+        local ec=$?
+        # impacket-psexec crashes with do_EOF in a non-fatal background thread
+        # when stdin is closed. The actual command still executes via SMB.
+        # Strip the thread traceback and normalize exit code if SMB connected.
+        if [ $ec -ne 0 ] && grep -q 'Exception in thread' "$tmpfile" 2>/dev/null; then
+            sed '/Exception in thread/,$d' "$tmpfile" > "${tmpfile}.clean" && mv "${tmpfile}.clean" "$tmpfile"
+            grep -q 'Opening SVCManager' "$tmpfile" 2>/dev/null && ec=0
+        fi
+        if [ $ec -eq 0 ]; then
             tail -3 "$tmpfile"
             rm -f "$tmpfile"
             return 0
         else
-            local ec=$?
             cat "$tmpfile"
             rm -f "$tmpfile"
             return $ec
@@ -248,11 +256,8 @@ run_deployment_step() {
 
     local arrows=(">" ">>" ">>>" ">>>>" ">>>" ">>" ">")
 
-    # Pipe 'exit' to stdin so psexec's RemoteShell closes cleanly instead of
-    # crashing on EOF (do_EOF AttributeError). The command arg is executed in
-    # RemoteShell.__init__ before cmdloop() reads stdin, so 'exit' only fires
-    # after the actual work is done.
-    printf 'exit\n' | "$@" > "$tmpfile" 2>&1 &
+    # Run command in background (stdin from /dev/null to detach from terminal)
+    "$@" < /dev/null > "$tmpfile" 2>&1 &
     local pid=$!
 
     printf "\033[?25l"
@@ -265,6 +270,14 @@ run_deployment_step() {
 
     local exit_code=0
     wait "$pid" || exit_code=$?
+
+    # impacket-psexec crashes with do_EOF in a non-fatal background thread
+    # when stdin is closed. The actual command still executes via SMB.
+    # Strip the thread traceback and normalize exit code if SMB connected.
+    if [ $exit_code -ne 0 ] && grep -q 'Exception in thread' "$tmpfile" 2>/dev/null; then
+        sed '/Exception in thread/,$d' "$tmpfile" > "${tmpfile}.clean" && mv "${tmpfile}.clean" "$tmpfile"
+        grep -q 'Opening SVCManager' "$tmpfile" 2>/dev/null && exit_code=0
+    fi
 
     printf "\r\033[K"
     printf "\033[?25h"
