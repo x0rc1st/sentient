@@ -293,7 +293,7 @@ success "Asset server on http://$VPN_IP:8443"
 info "Asset server log: $WORK_DIR/asset-server.log"
 
 # 7. Start the webhook receiver for desktop notifications
-python3 "$SCRIPT_DIR/webhook_receiver.py" > "$WORK_DIR/webhook-receiver.log" 2>&1 &
+python3 "$SCRIPT_DIR/../webhook_receiver.py" > "$WORK_DIR/webhook-receiver.log" 2>&1 &
 
 success "Webhook receiver on http://127.0.0.1:9000"
 info "Webhook receiver log: $WORK_DIR/webhook-receiver.log"
