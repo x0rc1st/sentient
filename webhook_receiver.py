@@ -14,36 +14,37 @@ BIND_ADDR = "127.0.0.1"
 PORT = 9000
 
 
-def _get_desktop_env():
-    """Build env dict with DISPLAY and DBUS so notify-send works under sudo.
+def _get_desktop_session():
+    """Find the real user and their DBUS/DISPLAY vars from /proc.
 
-    Since the framework runs under sudo, the desktop session vars are gone.
-    Recover them by reading /proc/<pid>/environ from a process owned by the
-    real logged-in user (found via SUDO_UID or the first non-root UID).
+    The framework runs under sudo so we're root — but notify-send must
+    run as the desktop user (DBUS rejects connections from other UIDs).
     """
-    env = os.environ.copy()
-    env.setdefault("DISPLAY", ":0")
+    real_user = os.environ.get("SUDO_USER", "")
+    target_uid = os.environ.get("SUDO_UID", "1000")
+    display = ":0"
+    dbus_addr = ""
 
-    if "DBUS_SESSION_BUS_ADDRESS" not in env:
-        target_uid = os.environ.get("SUDO_UID", "1000")
-        # Scan /proc for a process owned by the real user that has DBUS set
-        for pid_dir in glob.glob("/proc/[0-9]*"):
-            try:
-                if str(os.stat(pid_dir).st_uid) != target_uid:
-                    continue
-                with open(f"{pid_dir}/environ", "rb") as f:
-                    proc_env = f.read()
-                for entry in proc_env.split(b"\x00"):
-                    if entry.startswith(b"DBUS_SESSION_BUS_ADDRESS="):
-                        env["DBUS_SESSION_BUS_ADDRESS"] = entry.split(b"=", 1)[1].decode()
-                        return env
-            except (PermissionError, FileNotFoundError, ProcessLookupError):
+    for pid_dir in glob.glob("/proc/[0-9]*"):
+        try:
+            if str(os.stat(pid_dir).st_uid) != target_uid:
                 continue
+            with open(f"{pid_dir}/environ", "rb") as f:
+                proc_env = f.read()
+            for entry in proc_env.split(b"\x00"):
+                if entry.startswith(b"DBUS_SESSION_BUS_ADDRESS="):
+                    dbus_addr = entry.split(b"=", 1)[1].decode()
+                if entry.startswith(b"DISPLAY="):
+                    display = entry.split(b"=", 1)[1].decode()
+            if dbus_addr:
+                break
+        except (PermissionError, FileNotFoundError, ProcessLookupError):
+            continue
 
-    return env
+    return real_user, display, dbus_addr
 
 
-DESKTOP_ENV = _get_desktop_env()
+REAL_USER, DISPLAY, DBUS_ADDR = _get_desktop_session()
 
 
 class WebhookHandler(BaseHTTPRequestHandler):
@@ -58,15 +59,21 @@ class WebhookHandler(BaseHTTPRequestHandler):
         title = data.get("title", "S3NS3 Alert")
         message = data.get("message", json.dumps(data, indent=2))
 
+        # Run notify-send as the real desktop user so DBUS accepts the connection
         subprocess.Popen(
             [
+                "runuser", "-u", REAL_USER, "--",
+                "env",
+                f"DISPLAY={DISPLAY}",
+                f"DBUS_SESSION_BUS_ADDRESS={DBUS_ADDR}",
                 "notify-send",
                 "-u", NOTIFY_URGENCY,
                 "-t", str(NOTIFY_TIMEOUT_MS),
                 title,
                 message,
             ],
-            env=DESKTOP_ENV,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
         )
 
         self.send_response(200)
