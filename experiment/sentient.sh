@@ -87,7 +87,7 @@ while [[ "$PROVISION_MORE" =~ ^[Yy]$ ]]; do
     CREDS="${CREDS:-$DEFAULT_CREDS}"
 
     show_phase_header "Provisioning $TARGET_IP ($OS_TYPE)"
-    bash "$SCRIPT_DIR/provision-target.sh" "$TARGET_IP" "$OS_TYPE" "$CREDS"
+    bash "$SCRIPT_DIR/provision-target.sh" "$TARGET_IP" "$OS_TYPE" "$CREDS" || warn "Provisioning failed for $TARGET_IP (enrollment may need more time)"
 
     echo ""
     read -rp "$(printf "${C_YELLOW}  [?]${C_RESET} Provision another target? (y/N): ")" PROVISION_MORE
