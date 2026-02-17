@@ -259,7 +259,13 @@ run_with_spinner_output "Extracting client config..." "$WORK_DIR/client.config.y
     $PERSIST_DIR/velociraptor config client \
     --config "$WORK_DIR/server.config.yaml"
 
-# 5. Start the Velociraptor server
+# 5. Extract API config (for querying the running server without datastore conflicts)
+run_with_spinner_output "Extracting API config..." "$WORK_DIR/api.config.yaml" \
+    $PERSIST_DIR/velociraptor config api_client \
+    --config "$WORK_DIR/server.config.yaml" \
+    --name admin --role administrator
+
+# 6. Start the Velociraptor server
 $PERSIST_DIR/velociraptor frontend \
   --config "$WORK_DIR/server.config.yaml" \
   --definitions "$PERSIST_DIR/rulesets" \

@@ -13,7 +13,7 @@ CREDS="${3:-Administrator:password}"
 VPN_IP=$(ip -4 addr show tun0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
 PERSIST_DIR="/opt/htb-monitoring"
 WORK_DIR="/tmp/velo"
-VELO_CONFIG="$WORK_DIR/server.config.yaml"
+API_CONFIG="$WORK_DIR/api.config.yaml"
 
 if [ -z "$TARGET_IP" ]; then
     echo "Usage: $0 <target_ip> [windows|linux] [user:pass]"
@@ -77,11 +77,12 @@ fi
 
 enrollment_wait 10
 
-# Find the newly enrolled client
+# Find the newly enrolled client (query through the running server's API
+# to avoid datastore lock conflicts with the --config approach)
 run_with_spinner "Querying for enrolled client..." \
     bash -c '
 CLIENT_ID=$('"$PERSIST_DIR"'/velociraptor \
-  --config "'"$VELO_CONFIG"'" \
+  --api_config "'"$API_CONFIG"'" \
   query "SELECT client_id FROM clients() WHERE last_ip =~ '"'"''"${TARGET_IP}"''"'"' ORDER BY last_seen_at DESC LIMIT 1" \
   --format json 2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); print(d[0]['"'"'client_id'"'"'] if d else '"'"''"'"')" 2>/dev/null)
 if [ -z "$CLIENT_ID" ]; then
@@ -93,7 +94,7 @@ echo "CLIENT_ID=$CLIENT_ID"
 
 # Re-run the query to get client ID for display
 CLIENT_ID=$($PERSIST_DIR/velociraptor \
-  --config "$VELO_CONFIG" \
+  --api_config "$API_CONFIG" \
   query "SELECT client_id FROM clients() WHERE last_ip =~ '${TARGET_IP}' ORDER BY last_seen_at DESC LIMIT 1" \
   --format json 2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); print(d[0]['client_id'] if d else '')" 2>/dev/null)
 
