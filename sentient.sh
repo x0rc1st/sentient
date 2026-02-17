@@ -7,35 +7,30 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PERSIST_DIR="/opt/htb-monitoring"
 
+source "$SCRIPT_DIR/animations.sh"
+
 # ─── Banner ───────────────────────────────────────────────────────────────────
 
-echo "╔═══════════════════════════════════════════════════╗"
-echo "║              SENTIENT — HTB Monitoring            ║"
-echo "║         Velociraptor Deployment Framework         ║"
-echo "╚═══════════════════════════════════════════════════╝"
-echo ""
+show_banner
 
 # ─── Step 1: Setup (one-time) ────────────────────────────────────────────────
 
-echo "[?] Is this a fresh Pwnbox / first-time setup?"
-echo "    This downloads Velociraptor binaries, Sysmon, osquery, and rulesets."
+ask "Is this a fresh Pwnbox / first-time setup?"
+info "This downloads Velociraptor binaries, Sysmon, osquery, and rulesets."
 read -rp "    Run setup? (y/N): " RUN_SETUP
 
 if [[ "$RUN_SETUP" =~ ^[Yy]$ ]]; then
-    echo ""
-    echo "════════════════════════════════════════════════════"
-    echo " STEP 1/3 — Running setup.sh"
-    echo "════════════════════════════════════════════════════"
+    show_step_header 1 3 "Running setup.sh"
     bash "$SCRIPT_DIR/setup.sh"
     echo ""
-    echo "[+] Setup complete."
+    success "Setup complete."
 else
-    echo "[*] Skipping setup."
+    info "Skipping setup."
     if [ ! -x "$PERSIST_DIR/velociraptor" ]; then
-        echo "[!] Warning: $PERSIST_DIR/velociraptor not found. You may need to run setup first."
+        warn "Warning: $PERSIST_DIR/velociraptor not found. You may need to run setup first."
         read -rp "    Continue anyway? (y/N): " FORCE_CONTINUE
         if [[ ! "$FORCE_CONTINUE" =~ ^[Yy]$ ]]; then
-            echo "[-] Aborting."
+            error "Aborting."
             exit 1
         fi
     fi
@@ -45,44 +40,38 @@ echo ""
 
 # ─── Step 2: Bootstrap ──────────────────────────────────────────────────────
 
-echo "[?] Start the Velociraptor server and asset server?"
-echo "    This generates configs, lets you pick monitoring artifacts,"
-echo "    and starts the server using your current VPN IP."
+ask "Start the Velociraptor server and asset server?"
+info "This generates configs, lets you pick monitoring artifacts,"
+info "and starts the server using your current VPN IP."
 read -rp "    Run bootstrap? (Y/n): " RUN_BOOTSTRAP
 
 if [[ ! "$RUN_BOOTSTRAP" =~ ^[Nn]$ ]]; then
-    echo ""
-    echo "════════════════════════════════════════════════════"
-    echo " STEP 2/3 — Running bootstrap.sh"
-    echo "════════════════════════════════════════════════════"
+    show_step_header 2 3 "Running bootstrap.sh"
     bash "$SCRIPT_DIR/bootstrap.sh"
     echo ""
-    echo "[+] Bootstrap complete."
+    success "Bootstrap complete."
 else
-    echo "[*] Skipping bootstrap."
+    info "Skipping bootstrap."
 fi
 
 echo ""
 
 # ─── Step 3: Provision Target(s) ────────────────────────────────────────────
 
-echo "════════════════════════════════════════════════════"
-echo " STEP 3/3 — Provision Lab Targets"
-echo "════════════════════════════════════════════════════"
-echo ""
+show_step_header 3 3 "Provision Lab Targets"
 
 PROVISION_MORE="y"
 while [[ "$PROVISION_MORE" =~ ^[Yy]$ ]]; do
 
-    read -rp "[?] Target IP: " TARGET_IP
+    read -rp "$(printf "${C_YELLOW}  [?]${C_RESET} Target IP: ")" TARGET_IP
     if [ -z "$TARGET_IP" ]; then
-        echo "[-] No target IP provided. Skipping provisioning."
+        error "No target IP provided. Skipping provisioning."
         break
     fi
 
-    echo "[?] Target OS type:"
-    echo "    1) Windows (default)"
-    echo "    2) Linux"
+    ask "Target OS type:"
+    printf "${C_CYAN}    1)${C_RESET} Windows (default)\n"
+    printf "${C_CYAN}    2)${C_RESET} Linux\n"
     read -rp "    Select [1/2]: " OS_CHOICE
     case "$OS_CHOICE" in
         2) OS_TYPE="linux" ;;
@@ -94,17 +83,14 @@ while [[ "$PROVISION_MORE" =~ ^[Yy]$ ]]; do
     else
         DEFAULT_CREDS="root:password"
     fi
-    read -rp "[?] Credentials (user:pass) [$DEFAULT_CREDS]: " CREDS
+    read -rp "$(printf "${C_YELLOW}  [?]${C_RESET} Credentials (user:pass) [$DEFAULT_CREDS]: ")" CREDS
     CREDS="${CREDS:-$DEFAULT_CREDS}"
 
-    echo ""
-    echo "────────────────────────────────────────────────────"
-    echo " Provisioning $TARGET_IP ($OS_TYPE)"
-    echo "────────────────────────────────────────────────────"
+    show_phase_header "Provisioning $TARGET_IP ($OS_TYPE)"
     bash "$SCRIPT_DIR/provision-target.sh" "$TARGET_IP" "$OS_TYPE" "$CREDS"
 
     echo ""
-    read -rp "[?] Provision another target? (y/N): " PROVISION_MORE
+    read -rp "$(printf "${C_YELLOW}  [?]${C_RESET} Provision another target? (y/N): ")" PROVISION_MORE
     echo ""
 done
 
@@ -112,12 +98,9 @@ done
 
 VPN_IP=$(ip -4 addr show tun0 2>/dev/null | grep -oP '(?<=inet\s)\d+(\.\d+){3}' || echo "<unknown>")
 
-echo "╔═══════════════════════════════════════════════════╗"
-echo "║                 Session Summary                   ║"
-echo "╠═══════════════════════════════════════════════════╣"
-echo "║  Velociraptor GUI: https://$VPN_IP:8889"
-echo "║  Credentials:      admin / admin"
-echo "║  Asset Server:     http://$VPN_IP:8443"
-echo "╚═══════════════════════════════════════════════════╝"
-echo ""
-echo "[*] All done. Happy hunting!"
+show_summary_box \
+    "$(printf "${C_CYAN}Velociraptor GUI:${C_RESET}  https://$VPN_IP:8889")" \
+    "$(printf "${C_CYAN}Credentials:${C_RESET}       admin / admin")" \
+    "$(printf "${C_CYAN}Asset Server:${C_RESET}      http://$VPN_IP:8443")"
+
+typewrite "$(printf "${C_GREEN}All done. Happy hunting!${C_RESET}")"

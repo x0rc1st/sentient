@@ -4,6 +4,9 @@
 
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/animations.sh"
+
 PERSIST_DIR="/opt/htb-monitoring"
 VELO_VERSION="v0.75.6"
 VELO_RELEASE="https://github.com/Velocidex/velociraptor/releases/download/v0.75"
@@ -16,46 +19,51 @@ OSQUERY_FLAGS_URL="https://raw.githubusercontent.com/x0rc1st/sentient/main/osque
 REPO_API="https://api.github.com/repos/x0rc1st/sentient/contents/rulesets"
 RAW_BASE="https://raw.githubusercontent.com/x0rc1st/sentient/main/rulesets"
 
-echo "[*] Creating directories..."
+show_phase_header "Downloading Sentient Components"
+
+info "Creating directories..."
 mkdir -p "$PERSIST_DIR/rulesets"
 
-echo "[*] Downloading Linux binary..."
-curl -L -o "$PERSIST_DIR/velociraptor" \
-  "${VELO_RELEASE}/velociraptor-${VELO_VERSION}-linux-amd64"
+run_with_spinner "Downloading Velociraptor (Linux)..." \
+    curl -L -o "$PERSIST_DIR/velociraptor" \
+    "${VELO_RELEASE}/velociraptor-${VELO_VERSION}-linux-amd64"
 
-echo "[*] Downloading Windows binary..."
-curl -L -o "$PERSIST_DIR/velociraptor.exe" \
-  "${VELO_RELEASE}/velociraptor-${VELO_VERSION}-windows-amd64.exe"
+run_with_spinner "Downloading Velociraptor (Windows)..." \
+    curl -L -o "$PERSIST_DIR/velociraptor.exe" \
+    "${VELO_RELEASE}/velociraptor-${VELO_VERSION}-windows-amd64.exe"
 
-echo "[*] Downloading Sysmon64.exe..."
-curl -L -o "$PERSIST_DIR/Sysmon64.exe" "$SYSMON_URL"
+run_with_spinner "Downloading Sysmon64.exe..." \
+    curl -L -o "$PERSIST_DIR/Sysmon64.exe" "$SYSMON_URL"
 
-echo "[*] Downloading Sysmon config..."
-curl -L -o "$PERSIST_DIR/sysmonconfig-excludes-only.xml" "$SYSMON_CONFIG_URL"
+run_with_spinner "Downloading Sysmon config..." \
+    curl -L -o "$PERSIST_DIR/sysmonconfig-excludes-only.xml" "$SYSMON_CONFIG_URL"
 
-echo "[*] Downloading osquery ZIP..."
-curl -L -o "$PERSIST_DIR/osquery.zip" "$OSQUERY_ZIP_URL"
+run_with_spinner "Downloading osquery ZIP..." \
+    curl -L -o "$PERSIST_DIR/osquery.zip" "$OSQUERY_ZIP_URL"
 
-echo "[*] Downloading osquery config..."
-curl -L -o "$PERSIST_DIR/osquery.conf" "$OSQUERY_CONF_URL"
+run_with_spinner "Downloading osquery config..." \
+    curl -L -o "$PERSIST_DIR/osquery.conf" "$OSQUERY_CONF_URL"
 
-echo "[*] Downloading osquery flags..."
-curl -L -o "$PERSIST_DIR/osquery.flags" "$OSQUERY_FLAGS_URL"
+run_with_spinner "Downloading osquery flags..." \
+    curl -L -o "$PERSIST_DIR/osquery.flags" "$OSQUERY_FLAGS_URL"
 
-echo "[*] Downloading rulesets..."
+show_phase_header "Downloading Rulesets"
+
 RULESET_FILES=$(curl -s "$REPO_API" | grep '"name"' | grep -v '.gitkeep' | sed 's/.*"name": "\(.*\)".*/\1/')
+RULESET_COUNT=$(echo "$RULESET_FILES" | wc -w)
+RULESET_IDX=0
 for file in $RULESET_FILES; do
-  echo "    -> $file"
-  curl -sL -o "$PERSIST_DIR/rulesets/$file" "$RAW_BASE/$file"
+    RULESET_IDX=$((RULESET_IDX + 1))
+    run_with_spinner "[$RULESET_IDX/$RULESET_COUNT] $file" \
+        curl -sL -o "$PERSIST_DIR/rulesets/$file" "$RAW_BASE/$file"
 done
 
-echo "[*] Setting permissions..."
+info "Setting permissions..."
 chmod +x "$PERSIST_DIR/velociraptor"
 
-echo "[*] Verifying..."
+info "Verifying..."
 ls -lah "$PERSIST_DIR/"
 
 echo ""
-echo "[+] Setup complete. Directory structure:"
+success "Setup complete. Directory structure:"
 find "$PERSIST_DIR" -type f -exec ls -lh {} \;
-

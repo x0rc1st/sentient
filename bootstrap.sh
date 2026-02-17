@@ -2,18 +2,24 @@
 # /opt/htb-monitoring/bootstrap.sh
 # Called on every Pwnbox boot
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/animations.sh"
+
 PERSIST_DIR="/opt/htb-monitoring"
 WORK_DIR="/tmp/velo"
 mkdir -p "$WORK_DIR"
 
 # ─── Phase 1: Config generation & admin setup ────────────────────────────────
 
+show_phase_header "Config Generation & Admin Setup"
+
 # 1. Detect current VPN IP
 VPN_IP=$(ip -4 addr show tun0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
-echo "[*] VPN IP: $VPN_IP"
+info "VPN IP: $VPN_IP"
 
 # 2. Generate fresh server + client configs with this IP
-$PERSIST_DIR/velociraptor config generate --merge '{
+run_with_spinner_output "Generating server config..." "$WORK_DIR/server.config.yaml" \
+    $PERSIST_DIR/velociraptor config generate --merge '{
   "Client": {
     "server_urls": ["https://'"$VPN_IP"':8000/"],
     "use_self_signed_ssl": true
@@ -31,22 +37,18 @@ $PERSIST_DIR/velociraptor config generate --merge '{
     "location": "'"$WORK_DIR"'/datastore",
     "filestore_directory": "'"$WORK_DIR"'/filestore"
   }
-}' > "$WORK_DIR/server.config.yaml"
+}'
 
 # 3. Add admin user with known password
-$PERSIST_DIR/velociraptor --config "$WORK_DIR/server.config.yaml" \
-  user add admin admin --role administrator
+run_with_spinner "Creating admin user..." \
+    $PERSIST_DIR/velociraptor --config "$WORK_DIR/server.config.yaml" \
+    user add admin admin --role administrator
 
-echo ""
-echo "[+] Server config generated and admin user created."
+success "Server config generated and admin user created."
 
 # ─── Phase 2: Artifact selection for client monitoring ───────────────────────
 
-echo ""
-echo "────────────────────────────────────────────────────"
-echo " Select artifacts for default client monitoring"
-echo "────────────────────────────────────────────────────"
-echo ""
+show_phase_header "Select Artifacts for Client Monitoring"
 
 # Discover available rulesets
 RULESETS=()
@@ -57,17 +59,17 @@ for f in "$PERSIST_DIR/rulesets"/*.yaml; do
 done
 
 if [ ${#RULESETS[@]} -eq 0 ]; then
-    echo "[!] No rulesets found in $PERSIST_DIR/rulesets/"
-    echo "[*] Skipping artifact selection."
+    warn "No rulesets found in $PERSIST_DIR/rulesets/"
+    info "Skipping artifact selection."
 else
-    echo "[*] Available artifacts:"
+    info "Available artifacts:"
     for i in "${!RULESETS[@]}"; do
-        echo "    $((i+1))) ${RULESETS[$i]}"
+        printf "${C_CYAN}    %d)${C_RESET} ${C_BOLD}%s${C_RESET}\n" "$((i+1))" "${RULESETS[$i]}"
     done
 
     echo ""
-    echo "[?] Enter the numbers of the artifacts to monitor (space or comma separated)."
-    echo "    Example: 1 3  or  1,2,3  or  'all' for everything."
+    ask "Enter the numbers of the artifacts to monitor (space or comma separated)."
+    info "Example: 1 3  or  1,2,3  or  'all' for everything."
     read -rp "    Selection: " SELECTION
 
     SELECTED=()
@@ -81,16 +83,16 @@ else
             if [ "$idx" -ge 0 ] && [ "$idx" -lt "${#RULESETS[@]}" ]; then
                 SELECTED+=("${RULESETS[$idx]}")
             else
-                echo "[!] Invalid selection: $num (skipping)"
+                warn "Invalid selection: $num (skipping)"
             fi
         done
     fi
 
     if [ ${#SELECTED[@]} -gt 0 ]; then
         echo ""
-        echo "[*] Adding to default_client_monitoring_artifacts:"
+        info "Adding to default_client_monitoring_artifacts:"
         for artifact in "${SELECTED[@]}"; do
-            echo "    - $artifact"
+            printf "${C_GREEN}    - %s${C_RESET}\n" "$artifact"
         done
 
         # Use Python to reliably insert artifacts into the YAML config
@@ -121,29 +123,25 @@ with open(config_path, 'w') as f:
 " "$WORK_DIR/server.config.yaml" "${SELECTED[@]}"
 
         echo ""
-        echo "[+] Server config updated."
+        success "Server config updated."
     else
-        echo "[*] No artifacts selected. Continuing with defaults."
+        info "No artifacts selected. Continuing with defaults."
     fi
 fi
 
 # ─── Phase 2b: Artifact selection for server monitoring ──────────────────────
 
 if [ ${#RULESETS[@]} -gt 0 ]; then
-    echo ""
-    echo "────────────────────────────────────────────────────"
-    echo " Select artifacts for default server monitoring"
-    echo "────────────────────────────────────────────────────"
-    echo ""
+    show_phase_header "Select Artifacts for Server Monitoring"
 
-    echo "[?] Are any of the following artifacts server events?"
+    ask "Are any of the following artifacts server events?"
     for i in "${!RULESETS[@]}"; do
-        echo "    $((i+1))) ${RULESETS[$i]}"
+        printf "${C_CYAN}    %d)${C_RESET} ${C_BOLD}%s${C_RESET}\n" "$((i+1))" "${RULESETS[$i]}"
     done
 
     echo ""
-    echo "[?] Enter the numbers of the server event artifacts (space or comma separated)."
-    echo "    Example: 1 3  or  1,2,3  or  'all' for everything, or 'none' to skip."
+    ask "Enter the numbers of the server event artifacts (space or comma separated)."
+    info "Example: 1 3  or  1,2,3  or  'all' for everything, or 'none' to skip."
     read -rp "    Selection: " SRV_SELECTION
 
     SRV_SELECTED=()
@@ -158,16 +156,16 @@ if [ ${#RULESETS[@]} -gt 0 ]; then
             if [ "$idx" -ge 0 ] && [ "$idx" -lt "${#RULESETS[@]}" ]; then
                 SRV_SELECTED+=("${RULESETS[$idx]}")
             else
-                echo "[!] Invalid selection: $num (skipping)"
+                warn "Invalid selection: $num (skipping)"
             fi
         done
     fi
 
     if [ ${#SRV_SELECTED[@]} -gt 0 ]; then
         echo ""
-        echo "[*] Adding to default_server_monitoring_artifacts:"
+        info "Adding to default_server_monitoring_artifacts:"
         for artifact in "${SRV_SELECTED[@]}"; do
-            echo "    - $artifact"
+            printf "${C_GREEN}    - %s${C_RESET}\n" "$artifact"
         done
 
         # Use Python to insert server monitoring artifacts into the YAML config
@@ -224,41 +222,42 @@ with open(config_path, 'w') as f:
 " "$WORK_DIR/server.config.yaml" "${SRV_SELECTED[@]}"
 
         echo ""
-        echo "[+] Server config updated with server monitoring artifacts."
+        success "Server config updated with server monitoring artifacts."
 
         # Prompt for webhook URL if any selected artifact is an alert ruleset
         for artifact in "${SRV_SELECTED[@]}"; do
             if [[ "$artifact" == Custom.Server.Alerts* ]]; then
                 echo ""
-                read -rp "[?] Enter webhook URL for $artifact: " WEBHOOK_URL
+                read -rp "$(printf "${C_YELLOW}  [?]${C_RESET} Enter webhook URL for $artifact: ")" WEBHOOK_URL
                 if [ -n "$WEBHOOK_URL" ]; then
                     sed -i "s|https://your.webhook.url|$WEBHOOK_URL|g" \
                         "$PERSIST_DIR/rulesets/$artifact.yaml"
-                    echo "[+] Updated webhook URL in $artifact"
+                    success "Updated webhook URL in $artifact"
                 else
-                    echo "[!] No URL provided, keeping default for $artifact"
+                    warn "No URL provided, keeping default for $artifact"
                 fi
             fi
         done
     else
-        echo "[*] No server event artifacts selected. Continuing with defaults."
+        info "No server event artifacts selected. Continuing with defaults."
     fi
 fi
 
 # ─── Phase 3: Start services ────────────────────────────────────────────────
 
-echo ""
-read -rp "[?] Continue to start the Velociraptor server and asset server? (Y/n): " CONTINUE
+show_phase_header "Start Services"
+
+read -rp "$(printf "${C_YELLOW}  [?]${C_RESET} Continue to start the Velociraptor server and asset server? (Y/n): ")" CONTINUE
 if [[ "$CONTINUE" =~ ^[Nn]$ ]]; then
-    echo "[*] Stopped. Config is at: $WORK_DIR/server.config.yaml"
-    echo "[*] You can review/edit it and re-run this script."
+    info "Stopped. Config is at: $WORK_DIR/server.config.yaml"
+    info "You can review/edit it and re-run this script."
     exit 0
 fi
 
 # 4. Extract the client config from the server config
-$PERSIST_DIR/velociraptor config client \
-  --config "$WORK_DIR/server.config.yaml" \
-  > "$WORK_DIR/client.config.yaml"
+run_with_spinner_output "Extracting client config..." "$WORK_DIR/client.config.yaml" \
+    $PERSIST_DIR/velociraptor config client \
+    --config "$WORK_DIR/server.config.yaml"
 
 # 5. Start the Velociraptor server
 $PERSIST_DIR/velociraptor frontend \
@@ -266,9 +265,9 @@ $PERSIST_DIR/velociraptor frontend \
   --definitions "$PERSIST_DIR/rulesets" \
   -v > "$WORK_DIR/velociraptor.log" 2>&1 &
 
-echo "[*] Velociraptor server running on $VPN_IP:8000"
-echo "[*] GUI available at https://$VPN_IP:8889 (admin:admin)"
-echo "[*] Server log: $WORK_DIR/velociraptor.log"
+success "Velociraptor server running on $VPN_IP:8000"
+info "GUI available at https://$VPN_IP:8889 (admin:admin)"
+info "Server log: $WORK_DIR/velociraptor.log"
 
 # 6. Serve the client binaries + config for lab VMs to pull
 mkdir -p "$WORK_DIR/assets"
@@ -283,6 +282,6 @@ cp "$PERSIST_DIR/osquery.flags"               "$WORK_DIR/assets/"
 cd "$WORK_DIR/assets"
 python3 -m http.server 8443 --bind 0.0.0.0 > "$WORK_DIR/asset-server.log" 2>&1 &
 
-echo "[*] Asset server on http://$VPN_IP:8443"
-echo "[*] Asset server log: $WORK_DIR/asset-server.log"
-echo "[*] Ready to provision lab VMs"
+success "Asset server on http://$VPN_IP:8443"
+info "Asset server log: $WORK_DIR/asset-server.log"
+info "Ready to provision lab VMs"
