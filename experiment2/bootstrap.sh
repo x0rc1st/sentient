@@ -287,7 +287,7 @@ cp "$PERSIST_DIR/osquery.zip"                 "$WORK_DIR/assets/"
 cp "$PERSIST_DIR/osquery.conf"                "$WORK_DIR/assets/"
 cp "$PERSIST_DIR/osquery.flags"               "$WORK_DIR/assets/"
 cd "$WORK_DIR/assets"
-python3 -m http.server 8443 --bind 0.0.0.0 > "$WORK_DIR/asset-server.log" 2>&1 &
+python3 -c "from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer; ThreadingHTTPServer(('0.0.0.0', 8443), SimpleHTTPRequestHandler).serve_forever()" > "$WORK_DIR/asset-server.log" 2>&1 &
 
 success "Asset server on http://$VPN_IP:8443"
 info "Asset server log: $WORK_DIR/asset-server.log"
